@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.1] - 2026-03-09
+
+### Fixed
+
+- Suppressed the LangChain Core Pydantic v1 warning on Python 3.14+ to keep CLI output clean
+- Sanitized report iteration comments to remove markdown fence lines like ` ``` ` from table cells
+
+### Changed
+
+- Bumped project version metadata to `1.0.1`
+
 ## [1.0.0] - 2026-03-07
 
 ### Added

@@ -41,6 +41,18 @@ def _escape_table_cell(value: str) -> str:
     return value.replace("|", r"\|").replace("\n", "<br>")
 
 
+def _sanitize_comment(value: str) -> str:
+    lines = value.splitlines()
+    cleaned: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        # Drop markdown fence-only lines so table comments never include dangling ```
+        if stripped.startswith("```") and stripped.count("`") >= 3:
+            continue
+        cleaned.append(line)
+    return "\n".join(cleaned).strip()
+
+
 def generate_report(
     state: PipelineState,
     source_path: str,
@@ -69,9 +81,10 @@ def generate_report(
     if state.history:
         lines.extend(["| # | Action | Result | Comment |", "|---|---|---|---|"])
         for record in state.history:
+            comment = _sanitize_comment(record.comment)
             lines.append(
                 f"| {record.iteration} | {_escape_table_cell(record.action.capitalize())} | "
-                f"{_escape_table_cell(record.result)} | {_escape_table_cell(record.comment)} |"
+                f"{_escape_table_cell(record.result)} | {_escape_table_cell(comment)} |"
             )
     else:
         lines.append("*No iteration history recorded.*")

@@ -1,6 +1,6 @@
 [project]
 name = "agentic-converter-lc"
-version = "1.0.0"
+version = "1.0.1"
 description = "LangChain-based Jenkinsfile to GitHub Actions converter"
 requires-python = ">=3.10"
 dependencies = [
