@@ -5,7 +5,7 @@
 
 ## Summary
 
-Build a simplified CLI tool that converts Jenkinsfiles to GitHub Actions YAML using **LangChain** instead of raw `openai` SDK. The core architecture mirrors the existing AgenticConverter: a 2-agent iterative loop (converter↔reviewer) with immutable Pydantic state, Clean Architecture, and prompts stored as Markdown files. LangChain's `ChatOpenAI` and `ChatPromptTemplate` replace the direct OpenAI SDK calls. No tests required in this repository at this stage.
+Build a simplified CLI tool that converts Jenkinsfiles to GitHub Actions YAML using **LangChain** instead of raw `openai` SDK. The core architecture mirrors the existing Agentic Converter: a 2-agent iterative loop (converter↔reviewer) with immutable Pydantic state, Clean Architecture, and prompts stored as Markdown files. LangChain's `ChatOpenAI` and `ChatPromptTemplate` replace the direct OpenAI SDK calls. No tests required in this repository at this stage.
 
 ## Technical Context
 

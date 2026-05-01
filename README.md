@@ -1,108 +1,152 @@
-# AgenticConverter LC
+# Agentic Converter LC
 
-LangChain-based CLI that converts Jenkinsfiles to GitHub Actions YAML using a converter-reviewer iterative loop.
+LangChain-based CLI that converts Jenkinsfiles into GitHub Actions workflow YAML using a locally-hosted LLM and an iterative agentic converter-reviewer loop.
 
-## Overview
+## Purpose
 
-AgenticConverter LC keeps the same core pattern as the main `AgenticConverter` project:
-- converter agent generates workflow YAML
-- reviewer agent evaluates and returns `APPROVED` or `CHANGES_NEEDED`
-- pipeline repeats until approval or `max_iterations`
-- output includes `ci.yml` and `report.md`
+Agentic Converter LC is built for teams migrating CI from Jenkins to GitHub Actions who want:
+
+- fast first-pass workflow conversion
+- iterative quality control via an LLM reviewer pass
+- an auditable conversion report (`report.md`) per output
+
+## How It Works
+
+- Reads a [Jenkinsfile](docs/data-demo/input/1/Jenkinsfile) (or a directory of Jenkinsfiles) as conversion input.
+- Converter agent sends Jenkins pipeline content to LLM and generates GitHub Actions workflow YAML.
+- Reviewer agent evaluates the generated workflow output.
+- Iterates converter and reviewer until the result is approved or a max iteration count is reached.
+- Produces final GitHub Actions YAML ([ci.yml](docs/data-demo/output/1/ci.yml)) and conversion report ([report.md](docs/data-demo/output/1/report.md)) for each output, including confidence scoring and a manual verification checklist.
 
 ```mermaid
 flowchart LR
-    A[Jenkinsfile] --> B[Converter Chain]
-    B --> C[Workflow YAML]
-    C --> D[Reviewer Chain]
-    D -->|APPROVED| E[Write ci.yml + report.md]
-    D -->|CHANGES_NEEDED| B
+    A[Jenkinsfile] --> B[Converter Agent]
+    B --> C[YAML]
+    C --> D[Reviewer Agent]
+    D -->|Approved| E[ci.yml + report.md]
+    D -->|Feedback| B
 ```
+
+## Architecture Pitch
+
+- High-level technical pitch (deep dive): [`docs/PITCH.md`](docs/PITCH.md)
+
+## Tech Stack
+
+- Core runtime: `Python 3.10+`, `uv`
+- LLM runtime: Local OpenAI-compatible server such as `LM Studio` or `LightLLM`
+- LLM integration: `langchain-core`, `langchain-openai` (`ChatOpenAI`)
+- Data modeling: `Pydantic`
+- Project baseline: follows [agentic-converter-py](https://github.com/romanmash/agentic-converter-py), replacing raw OpenAI SDK calls with LangChain chains
+- Testing status: no automated test suite is currently included
 
 ## Quick Start
 
 ```bash
+# 1. Install dependencies
 uv sync
+
+# 2. (Optional) Add local overrides
+cp config/config.local.example.json config/config.local.json
+# Edit config/config.local.json as needed (e.g., output_dir)
+
+# 3. Start your LLM server (e.g., LM Studio) and load a code model
+
+# 4. Place Jenkinsfiles in .data/input/
+mkdir -p .data/input/1
+cp /path/to/your/Jenkinsfile .data/input/1/Jenkinsfile
+
+# 5. Convert a single Jenkinsfile
 uv run python -m src.main .data/input/1/Jenkinsfile
-```
 
-Convert all samples:
-
-```bash
-uv run python -m src.main .data/input/ -v
+# 6. Or convert all Jenkinsfiles in a directory
+uv run python -m src.main .data/input/
 ```
 
 ## CLI
 
-```text
+```
 usage: agentic-converter-lc [-h] [-V] [-o DIR] [-n N] [-v] [path]
+
+positional arguments:
+  path                  Jenkinsfile or directory containing Jenkinsfiles
+
+options:
+  -h, --help            show this help message and exit
+  -V, --version         show program's version number and exit
+  -o, --output-dir DIR  Output directory (default: from config/config.json)
+  -n, --max-iterations N
+                        Max converter-reviewer iterations (default: from config/config.json)
+  -v, --verbose         Enable verbose output
 ```
 
-- `path` Jenkinsfile path or directory containing Jenkinsfiles
-- `-V, --version` show app version from `pyproject.toml`
-- `-o, --output-dir DIR` override output directory
-- `-n, --max-iterations N` override max converter-reviewer iterations
-- `-v, --verbose` print loop progress and reviewer feedback
+### Examples
+
+```bash
+# Single file (positional argument)
+uv run python -m src.main .data/input/1/Jenkinsfile
+
+# Batch with verbose
+uv run python -m src.main .data/input/ -n 3 -v
+
+# Custom output directory
+uv run python -m src.main .data/input/ -o results/
+
+# Check version
+uv run python -m src.main --version
+```
 
 ## Configuration
 
-Config precedence:
-1. `config/config.json`
-2. optional `config/config.local.json`
-3. CLI flags (`-o`, `-n`, `-v`)
+Three-layer configuration with clear precedence: **CLI > config/config.local.json > config/config.json**
 
-LangChain model connection is configured in `config/config.json` under `llm`.
+| Layer | File | Purpose |
+|---|---|---|
+| Defaults | `config/config.json` | App behavior (max_iterations, output_dir, verbose, LLM settings) |
+| Local Overrides | `config/config.local.json` | Optional machine-specific non-secret overrides (gitignored recommended) |
+| Overrides | CLI args | Per-run overrides (-n, -o, -v) |
 
-## Data Layout
+Use `config/config.local.json` for machine-specific overrides you want outside git. Keep long-term defaults in `config/config.json`.
+LangChain model connection settings are configured under `llm` in `config/config.json`.
 
-Two sample inputs are included:
-- `.data/input/1/Jenkinsfile`
-- `.data/input/2/Jenkinsfile`
+### Working Data
 
-Generated outputs:
-- `.data/output/1/ci.yml`
-- `.data/output/1/report.md`
-- `.data/output/2/ci.yml`
-- `.data/output/2/report.md`
+Conversion data lives in `.data/`.
+For a real generated dataset, see `docs/data-demo/`.
 
-## Report Generation
+| Directory | Purpose |
+|---|---|
+| `.data/input/` | Jenkinsfiles to be converted |
+| `.data/output/` | Generated GitHub Actions YAML + conversion reports |
 
-Each run produces `report.md` with:
-- status, iteration count, confidence
-- iteration history table
-- manual verification checklist
-- embedded generated YAML
+## Repository Structure
 
-Confidence rules:
-- `HIGH`: approved in 1-2 iterations
-- `MEDIUM`: approved in 3-4 iterations
-- `LOW`: max iterations reached or error
-
-## Architecture
-
-```mermaid
-flowchart TB
-    CLI[main.py I/O boundary] --> CFG[config manager]
-    CLI --> PIPE[pipeline loop]
-    PIPE --> CONV[converter chain]
-    PIPE --> REV[reviewer chain]
-    CONV --> LLM[ChatOpenAI]
-    REV --> LLM
-    PIPE --> RPT[report generator]
-    CONV -.-> CP[converter prompt md]
-    REV -.-> RP[reviewer prompt md]
 ```
-
-- `src/main.py` CLI entrypoint and all file I/O
-- `src/config/manager.py` typed config + merge
-- `src/llm/client.py` `ChatOpenAI` factory
-- `src/agents/converter.py` LangChain converter chain
-- `src/agents/reviewer.py` LangChain reviewer chain
-- `src/graph/pipeline.py` immutable state and orchestration
-- `src/report/generator.py` markdown report generation
-- `src/prompts/*.md` prompt-as-config
-
-## Notes
-
-- This repo intentionally follows the main project style, but replaces raw OpenAI SDK calls with LangChain chains.
-- No automated test suite is currently included.
+agentic-converter-langchain/
+├── .data/                   # Runtime conversion data
+├── config/
+│   ├── config.json               # App defaults (single source of truth)
+│   └── config.local.example.json # Optional local override template
+├── docs/
+│   ├── data-demo/           # Real conversion input/output examples
+│   ├── CASE.md              # Original customer case brief
+│   └── PITCH.md             # Pitch presentation (architecture, rationale, diagrams)
+├── specs/                   # Feature specifications
+├── src/
+│   ├── main.py              # CLI entry point + ALL file I/O
+│   ├── config/manager.py    # config/config.json + config/config.local.json loading and merging
+│   ├── agents/converter.py  # Jenkinsfile -> YAML via LangChain chain
+│   ├── agents/reviewer.py   # Evaluates YAML, returns APPROVED/CHANGES_NEEDED
+│   ├── graph/pipeline.py    # PipelineState model + agentic orchestration loop
+│   ├── report/generator.py  # Conversion report (confidence, checklist, history)
+│   ├── llm/client.py        # ChatOpenAI factory (Dependency Injection)
+│   └── prompts/             # System prompts as Markdown files
+├── AGENTS.md                # AI assistant collaboration rules
+├── CHANGELOG.md             # Version history
+├── CONTRIBUTING.md          # Contribution guidelines
+├── LICENSE                  # MIT License
+├── pyproject.toml           # Project metadata and dependencies
+├── uv.lock                  # Locked dependency graph
+├── .editorconfig            # Editor defaults
+└── .gitignore               # Ignore rules
+```

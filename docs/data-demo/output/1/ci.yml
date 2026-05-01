@@ -1,0 +1,20 @@
+name: Jenkins to GitHub Actions Conversion
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Build
+      run: echo "build"
+
+    - name: Test
+      run: echo "test"

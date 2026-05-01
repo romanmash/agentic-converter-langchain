@@ -1,0 +1,104 @@
+name: Jenkins-to-GitHub-Actions Conversion
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  prepare-tools-and-build:
+    runs-on: ubuntu-latest
+    container:
+      image: gradle:8.7.0-jdk17-alpine
+      args: '-u root'
+    env:
+      APP_ENV: ci
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Prepare Tools
+        run: |
+          apk add --no-cache bash git jq
+          jq --version
+
+      - name: Build
+        run: ./gradlew --no-daemon clean build
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    container:
+      image: gradle:8.7.0-jdk17-alpine
+      args: '-u root'
+    env:
+      APP_ENV: ci
+
+    needs: prepare-tools-and-build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Unit Tests
+        run: ./gradlew --no-daemon test
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-results
+          path: build/test-results/test/*.xml
+
+  lint:
+    runs-on: ubuntu-latest
+    container:
+      image: gradle:8.7.0-jdk17-alpine
+      args: '-u root'
+    env:
+      APP_ENV: ci
+
+    needs: prepare-tools-and-build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Lint
+        run: ./gradlew --no-daemon check
+
+  publish-artifacts:
+    runs-on: ubuntu-latest
+    container:
+      image: gradle:8.7.0-jdk17-alpine
+      args: '-u root'
+    env:
+      APP_ENV: ci
+
+    needs: [unit-tests, lint]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Publish Artifacts (placeholder)
+        run: echo 'Publishing artifacts (placeholder)'
+
+  archive-artifacts:
+    runs-on: ubuntu-latest
+    container:
+      image: gradle:8.7.0-jdk17-alpine
+      args: '-u root'
+    env:
+      APP_ENV: ci
+
+    needs: [unit-tests, lint]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Archive Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-libs
+          path: build/libs/*.jar

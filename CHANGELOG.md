@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+- Moved versioned demo input/output artifacts from `.data/` to `docs/data-demo/`
+- Switched `.data/input` and `.data/output` to `.gitkeep`-only tracking
+- Refined README, `docs/PITCH.md`, `CONTRIBUTING.md`, and `AGENTS.md` to match the new runtime-vs-demo data layout
+
 ## [1.0.1] - 2026-03-09
 
 ### Fixed

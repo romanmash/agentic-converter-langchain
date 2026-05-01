@@ -3,7 +3,7 @@
 **Feature Branch**: `001-langchain-converter`
 **Created**: 2026-03-06
 **Status**: Draft
-**Input**: User description: "Build a simplified LangChain-based variant that demonstrates the same converter↔reviewer agentic loop as the existing AgenticConverter, proving the approach is workable with LangChain."
+**Input**: User description: "Build a simplified LangChain-based variant that demonstrates the same converter↔reviewer agentic loop as the existing Agentic Converter, proving the approach is workable with LangChain."
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -71,4 +71,4 @@ As a DevOps engineer, I want the LangChain-based converter to iterate using a re
 - **SC-002**: The agentic loop converges (APPROVED) or terminates at max iterations
 - **SC-003**: LangChain `ChatOpenAI` and prompt templates are used throughout
 - **SC-004**: Codebase is under 400 lines of application code
-- **SC-005**: Architecture mirrors the original AgenticConverter design (Clean Architecture, DI, prompts-as-config)
+- **SC-005**: Architecture mirrors the original Agentic Converter design (Clean Architecture, DI, prompts-as-config)

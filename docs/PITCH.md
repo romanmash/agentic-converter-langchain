@@ -1,6 +1,6 @@
-# AgenticConverter LC - Pitch
+# Agentic Converter LC - Pitch
 
-This document explains how the LangChain variant mirrors the main AgenticConverter approach while swapping the LLM integration layer to LangChain.
+This document explains how the LangChain variant mirrors the main Agentic Converter approach while swapping the LLM integration layer to LangChain.
 
 ## 1. Goal
 
@@ -80,15 +80,20 @@ Each output directory contains:
 
 ## 6. Sample Data
 
-The release includes two sample Jenkinsfiles:
-- `.data/input/1/Jenkinsfile`
-- `.data/input/2/Jenkinsfile`
+Runtime conversion reads from:
+- `.data/input/`
 
-Run both:
+Versioned demo Jenkinsfiles are stored in:
+- `docs/data-demo/input/1/Jenkinsfile`
+- `docs/data-demo/input/2/Jenkinsfile`
+
+To run demos in the runtime path:
 
 ```bash
 uv run python -m src.main .data/input/ -v
 ```
+
+Generated runtime outputs are written to `.data/output/`.
 
 ## 7. Operating Model
 
